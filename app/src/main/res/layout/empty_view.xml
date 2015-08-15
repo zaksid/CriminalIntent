@@ -17,13 +17,13 @@
 
         <TextView
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:text="@string/empty_list" />
 
         <Button
             android:id="@+id/button_add_crime"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:text="@string/new_crime" />
 
     </LinearLayout>

@@ -79,7 +79,7 @@ public class CrimeFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_crime, parent, false);
 
         buttonDateAndTime = (Button) view.findViewById(R.id.crime_date_time);
-        updateDateAndTime(buttonDateAndTime, (Date)crime.getDate());
+        updateDateAndTime(buttonDateAndTime, (Date) crime.getDate());
         buttonDateAndTime.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -147,12 +147,18 @@ public class CrimeFragment extends Fragment {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-                if (NavUtils.getParentActivityName(getActivity()) != null){
+                if (NavUtils.getParentActivityName(getActivity()) != null) {
                     NavUtils.navigateUpFromSameTask(getActivity());
                 }
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        CrimeLab.get(getActivity()).saveCrimes();
     }
 }

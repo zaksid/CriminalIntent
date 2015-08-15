@@ -51,9 +51,6 @@ public class CrimeListFragment extends ListFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle savedInstanceState) {
 //        View view = super.onCreateView(inflater, parent, savedInstanceState);
         View view = inflater.inflate(R.layout.empty_view, parent, false);
-//        ListView listView = (ListView) view.findViewById(android.R.id.empty);
-//        listView.setEmptyView(view.findViewById(android.R.id.list));
-
 
         addNewCrimeButton = (Button) view.findViewById(R.id.button_add_crime);
         addNewCrimeButton.setOnClickListener(new View.OnClickListener() {
