@@ -26,12 +26,12 @@ public class CrimeLab {
 
         try {
             /* Loading from internal storage*/
-//            crimes = serializer.loadCrimes();
-//            Log.d(LOG_TAG_SAVING, "Crimes loaded from file (internal storage)");
+            crimes = serializer.loadCrimes();
+            Log.d(LOG_TAG_SAVING, "Crimes loaded from file (internal storage)");
 
             /* Loading from external storage*/
-            crimes = serializer.loadCrimesFromExternalStorage();
-            Log.d(LOG_TAG_SAVING, "Crimes loaded from external storage");
+//            crimes = serializer.loadCrimesFromExternalStorage();
+//            Log.d(LOG_TAG_SAVING, "Crimes loaded from external storage");
         } catch (Exception e) {
             crimes = new ArrayList<>();
             Log.e(LOG_TAG_SAVING, "Error loading crimes: ", e);
@@ -62,16 +62,20 @@ public class CrimeLab {
         crimes.add(crime);
     }
 
+    public void deleteCrime(Crime crime) {
+        crimes.remove(crime);
+    }
+
     public boolean saveCrimes() {
         try {
 
             /* Saving to external storage */
-//            serializer.saveCrimes(crimes);
-//            Log.d(LOG_TAG_SAVING, "Crimes saved to file");
+            serializer.saveCrimes(crimes);
+            Log.d(LOG_TAG_SAVING, "Crimes saved to file");
 
             /* Saving to external storage */
-            serializer.saveCrimesToExternalStorage(crimes);
-            Log.d(LOG_TAG_SAVING, "Crimes saved to external storage");
+//            serializer.saveCrimesToExternalStorage(crimes);
+//            Log.d(LOG_TAG_SAVING, "Crimes saved to external storage");
 
             return true;
         } catch (Exception e) {
