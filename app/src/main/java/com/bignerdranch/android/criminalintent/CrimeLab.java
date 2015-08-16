@@ -11,7 +11,7 @@ import java.util.UUID;
  */
 public class CrimeLab {
 
-    private static final String TAG = "CrimeLab";
+    private static final String LOG_TAG_SAVING = "SavingCrimes";
     private static final String FILENAME = "crimes.json";
 
     private static CrimeLab sCrimeLab;
@@ -25,10 +25,16 @@ public class CrimeLab {
         serializer = new CriminalIntentJSONSerializer(this.appContext, FILENAME);
 
         try {
-            crimes = serializer.loadCrimes();
+            /* Loading from internal storage*/
+//            crimes = serializer.loadCrimes();
+//            Log.d(LOG_TAG_SAVING, "Crimes loaded from file (internal storage)");
+
+            /* Loading from external storage*/
+            crimes = serializer.loadCrimesFromExternalStorage();
+            Log.d(LOG_TAG_SAVING, "Crimes loaded from external storage");
         } catch (Exception e) {
             crimes = new ArrayList<>();
-            Log.e(TAG, "Error loading crimes: ", e);
+            Log.e(LOG_TAG_SAVING, "Error loading crimes: ", e);
         }
     }
 
@@ -58,11 +64,18 @@ public class CrimeLab {
 
     public boolean saveCrimes() {
         try {
-            serializer.saveCrimes(crimes);
-            Log.d(TAG, "crimes saved to file");
+
+            /* Saving to external storage */
+//            serializer.saveCrimes(crimes);
+//            Log.d(LOG_TAG_SAVING, "Crimes saved to file");
+
+            /* Saving to external storage */
+            serializer.saveCrimesToExternalStorage(crimes);
+            Log.d(LOG_TAG_SAVING, "Crimes saved to external storage");
+
             return true;
         } catch (Exception e) {
-            Log.e(TAG, "Error saving crimes: " + e);
+            Log.e(LOG_TAG_SAVING, "Error saving crimes: " + e);
             return false;
         }
     }
