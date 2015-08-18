@@ -99,14 +99,16 @@ public class CrimeListFragment extends ListFragment {
                         case R.id.menu_item_delete_crime:
                             CrimeAdapter adapter = (CrimeAdapter) getListAdapter();
                             CrimeLab crimeLab = CrimeLab.get(getActivity());
-                            for (int i = adapter.getCount() - 1; i >= 0; i++) {
+                            for (int i = adapter.getCount() - 1; i >= 0; i--) {
                                 if (getListView().isItemChecked(i)) {
                                     crimeLab.deleteCrime(adapter.getItem(i));
                                 }
                             }
                             actionMode.finish();
                             adapter.notifyDataSetChanged();
+                            crimeLab.saveCrimes();
                             return true;
+
                         default:
                             return false;
                     }
@@ -161,6 +163,7 @@ public class CrimeListFragment extends ListFragment {
                 intent.putExtra(CrimeFragment.EXTRA_CRIME_ID, crime.getId());
                 startActivityForResult(intent, 0);
                 return true;
+
             case R.id.menu_item_show_subtitle:
                 if (getActivity().getActionBar().getSubtitle() == null) {
                     getActivity().getActionBar().setSubtitle(R.string.subtitle);
@@ -172,6 +175,7 @@ public class CrimeListFragment extends ListFragment {
                     item.setTitle(R.string.show_subtitle);
                 }
                 return true;
+
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -193,8 +197,10 @@ public class CrimeListFragment extends ListFragment {
 
         switch (item.getItemId()) {
             case R.id.menu_item_delete_crime:
-                CrimeLab.get(getActivity()).deleteCrime(crime);
+                CrimeLab crimeLab = CrimeLab.get(getActivity());
+                crimeLab.deleteCrime(crime);
                 adapter.notifyDataSetChanged();
+                crimeLab.saveCrimes();
                 return true;
         }
 
