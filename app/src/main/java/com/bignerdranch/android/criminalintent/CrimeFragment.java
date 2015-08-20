@@ -3,6 +3,7 @@ package com.bignerdranch.android.criminalintent;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -21,12 +22,14 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ImageButton;
 
 import java.util.Date;
 import java.util.UUID;
 
 /**
  * Created by zaksid on 6/30/15.
+ *
  */
 public class CrimeFragment extends Fragment {
 
@@ -40,10 +43,9 @@ public class CrimeFragment extends Fragment {
 
     private Crime crime;
     private EditText titleField;
-    private Button buttonDate;
-    private Button buttonTime;
     private Button buttonDateAndTime;
     private CheckBox isSolvedCheckBox;
+    private ImageButton photoButton;
 
     public static CrimeFragment newInstance(UUID id) {
         Bundle args = new Bundle();
@@ -92,6 +94,20 @@ public class CrimeFragment extends Fragment {
             }
         });
 
+        photoButton = (ImageButton) view.findViewById(R.id.crime_imageButton);
+        photoButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(getActivity(), CrimeCameraActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        PackageManager pm = getActivity().getPackageManager();
+        if (!pm.hasSystemFeature(PackageManager.FEATURE_CAMERA) &&
+                !pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT)) {
+            photoButton.setEnabled(false);
+        }
 
         isSolvedCheckBox = (CheckBox) view.findViewById(R.id.crime_solved);
         isSolvedCheckBox.setChecked(crime.isSolved());
