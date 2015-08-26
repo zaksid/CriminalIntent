@@ -13,6 +13,8 @@ import android.support.v4.app.NavUtils;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.format.DateFormat;
+import android.util.Log;
+import android.view.ActionMode;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -26,6 +28,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 
+import java.io.File;
 import java.util.Date;
 import java.util.UUID;
 
@@ -33,6 +36,7 @@ import java.util.UUID;
  * Created by zaksid on 6/30/15.
  * Provides displaying single crime info in fragment
  */
+@TargetApi(11)
 public class CrimeFragment extends Fragment {
 
     public static final String EXTRA_CRIME_ID = "com.bignerdranch.android.criminalintent.crime_id";
@@ -57,6 +61,38 @@ public class CrimeFragment extends Fragment {
     private ImageButton photoButton;
     private ImageView photoView;
 
+    private ActionMode actionMode;
+
+    private ActionMode.Callback actionModeCallback = new ActionMode.Callback() {
+        @Override
+        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+            MenuInflater inflater = mode.getMenuInflater();
+            inflater.inflate(R.menu.crime_list_item_context, menu);
+            return true;
+        }
+
+        @Override
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+            return false;
+        }
+
+        @Override
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+            switch (item.getItemId()) {
+                case R.id.menu_item_delete_crime:
+                    deletePhoto();
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        @Override
+        public void onDestroyActionMode(ActionMode mode) {
+            actionMode = null;
+        }
+    };
+
     public static CrimeFragment newInstance(UUID id) {
         Bundle args = new Bundle();
         args.putSerializable(EXTRA_CRIME_ID, id);
@@ -80,6 +116,21 @@ public class CrimeFragment extends Fragment {
         }
 
         photoView.setImageDrawable(drawable);
+    }
+
+    private void deletePhoto() {
+        Photo photo = crime.getPhoto();
+        if (photo == null)
+            return;
+        String path = getActivity().getFileStreamPath(photo.getFilename()).getAbsolutePath();
+        File file = new File(path);
+        boolean deleted = file.delete();
+        if (!deleted) {
+            Log.e(LOG_TAG, "Photo was not deleted");
+            return;
+        }
+        crime.deletePhoto();
+        PictureUtils.cleanImageView(photoView);
     }
 
     @SuppressWarnings("ConstantConditions")
@@ -163,6 +214,21 @@ public class CrimeFragment extends Fragment {
                 ImageFragment.newInstance(path).show(manager, DIALOG_IMAGE);
             }
         });
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            photoView.setOnLongClickListener(new View.OnLongClickListener() {
+                @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+                @Override
+                public boolean onLongClick(View view) {
+                    if (actionMode != null) {
+                        return false;
+                    }
+
+                    actionMode = getActivity().startActionMode(actionModeCallback);
+                    view.setSelected(true);
+                    return true;
+                }
+            });
+        }
 
         isSolvedCheckBox = (CheckBox) view.findViewById(R.id.crime_solved);
         isSolvedCheckBox.setChecked(crime.isSolved());
@@ -198,7 +264,7 @@ public class CrimeFragment extends Fragment {
         if (resultCode != Activity.RESULT_OK)
             return;
 
-        if (requestCode == REQUEST_DATE && resultCode == Activity.RESULT_OK) {
+        if (requestCode == REQUEST_DATE) {
             crime.setDate((Date) data.getSerializableExtra(DatePickerFragment.EXTRA_DATE));
 
             FragmentManager fm = getActivity().getSupportFragmentManager();
@@ -215,6 +281,7 @@ public class CrimeFragment extends Fragment {
         if (requestCode == REQUEST_PHOTO) {
             String filename = data.getStringExtra(CrimeCameraFragment.EXTRA_PHOTO_FILENAME);
             if (filename != null) {
+                deletePhoto();
                 Photo photo = new Photo(filename);
                 crime.setPhoto(photo);
                 showPhoto();

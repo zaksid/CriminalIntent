@@ -77,6 +77,10 @@ public class Crime {
         this.photo = photo;
     }
 
+    public void deletePhoto() {
+        this.photo = null;
+    }
+
     public boolean isSolved() {
         return isSolved;
     }
