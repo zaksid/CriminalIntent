@@ -18,6 +18,8 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.format.DateFormat;
 import android.util.Log;
+import android.view.ActionMode;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -43,7 +45,7 @@ import java.util.UUID;
 public class CrimeFragment extends Fragment {
 
     public static final String EXTRA_CRIME_ID = "com.bignerdranch.android.criminalintent.crime_id";
-    public static final String DATE_TIME_FORMAT = "EEE LLLL d, yyyy | h:mm a";
+    public static final String DATE_TIME_FORMAT = "EEE LLL d, yyyy h:mm a";
 
     private static final String LOG_TAG = "CrimeFragment";
 
@@ -62,6 +64,9 @@ public class CrimeFragment extends Fragment {
     private Button buttonDateAndTime;
     private Button chooseSuspectButton;
     private ImageView photoView;
+    private ImageButton callSuspectButton;
+    private Callbacks callbacks;
+    private ActionMode actionMode;
 
     public static CrimeFragment newInstance(UUID id) {
         Bundle args = new Bundle();
@@ -90,15 +95,19 @@ public class CrimeFragment extends Fragment {
 
     private void deletePhoto() {
         Photo photo = crime.getPhoto();
+
         if (photo == null)
             return;
+
         String path = getActivity().getFileStreamPath(photo.getFilename()).getAbsolutePath();
         File file = new File(path);
         boolean deleted = file.delete();
+
         if (!deleted) {
             Log.e(LOG_TAG, "Photo was not deleted");
             return;
         }
+
         crime.deletePhoto();
         PictureUtils.cleanImageView(photoView);
     }
@@ -161,6 +170,18 @@ public class CrimeFragment extends Fragment {
     }
 
     @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        callbacks = (Callbacks) activity;
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        callbacks = null;
+    }
+
+    @Override
     public View onCreateView(final LayoutInflater inflater, ViewGroup parent,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_crime, parent, false);
@@ -207,12 +228,63 @@ public class CrimeFragment extends Fragment {
             }
         });
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            final ActionMode.Callback actionModeCallback = new ActionMode.Callback() {
+                @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+                @Override
+                public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+                    MenuInflater inflater = mode.getMenuInflater();
+                    inflater.inflate(R.menu.crime_list_item_context, menu);
+                    return true;
+                }
+
+                @Override
+                public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+                    return false;
+                }
+
+                @Override
+                public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+                    switch (item.getItemId()) {
+                        case R.id.menu_item_delete_crime:
+                            deletePhoto();
+                            return true;
+
+                        default:
+                            return false;
+                    }
+                }
+
+                @Override
+                public void onDestroyActionMode(ActionMode mode) {
+                    actionMode = null;
+                }
+            };
+
+            photoView.setOnLongClickListener(new View.OnLongClickListener() {
+                @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+                @Override
+                public boolean onLongClick(View view) {
+                    if (actionMode != null) {
+                        return false;
+                    }
+
+                    actionMode = getActivity().startActionMode(actionModeCallback);
+                    view.setSelected(true);
+                    return true;
+                }
+            });
+        } else {
+            registerForContextMenu(photoView);
+        }
+
         CheckBox isSolvedCheckBox = (CheckBox) view.findViewById(R.id.crime_solved);
         isSolvedCheckBox.setChecked(crime.isSolved());
         isSolvedCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 crime.setIsSolved(isChecked);
+                callbacks.onCrimeUpdated(crime);
             }
         });
 
@@ -226,6 +298,8 @@ public class CrimeFragment extends Fragment {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 crime.setTitle(s.toString());
+                callbacks.onCrimeUpdated(crime);
+                getActivity().setTitle(crime.getTitle());
             }
 
             @Override
@@ -247,7 +321,7 @@ public class CrimeFragment extends Fragment {
             }
         });
 
-        ImageButton callSuspectButton = (ImageButton) view.findViewById(R.id.crime_callSuspectButton);
+        callSuspectButton = (ImageButton) view.findViewById(R.id.crime_callSuspectButton);
         chooseSuspectButton = (Button) view.findViewById(R.id.crime_suspectButton);
         chooseSuspectButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -259,6 +333,9 @@ public class CrimeFragment extends Fragment {
 
         if (crime.getSuspect() != null) {
             chooseSuspectButton.setText(crime.getSuspect());
+            callSuspectButton.setEnabled(true);
+        } else {
+            callSuspectButton.setEnabled(false);
         }
 
         callSuspectButton.setOnClickListener(new View.OnClickListener() {
@@ -297,6 +374,7 @@ public class CrimeFragment extends Fragment {
         if (requestCode == REQUEST_TIME) {
             crime.setDate((Date) data.getSerializableExtra(TimePickerFragment.EXTRA_TIME));
             updateDateAndTime(buttonDateAndTime, crime.getDate());
+            callbacks.onCrimeUpdated(crime);
         }
 
         if (requestCode == REQUEST_PHOTO) {
@@ -305,6 +383,7 @@ public class CrimeFragment extends Fragment {
                 deletePhoto();
                 Photo photo = new Photo(filename);
                 crime.setPhoto(photo);
+                callbacks.onCrimeUpdated(crime);
                 showPhoto();
             }
         }
@@ -360,7 +439,9 @@ public class CrimeFragment extends Fragment {
             }
 
             crime.setSuspect(suspectName);
+            callbacks.onCrimeUpdated(crime);
             chooseSuspectButton.setText(suspectName);
+            callSuspectButton.setEnabled(true);
             cursor.close();
         }
 
@@ -391,6 +472,26 @@ public class CrimeFragment extends Fragment {
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        getActivity().getMenuInflater().inflate(R.menu.crime_list_item_context, menu);
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.menu_item_delete_crime:
+                deletePhoto();
+                return true;
+        }
+
+        return super.onContextItemSelected(item);
+    }
+
+    public interface Callbacks {
+        void onCrimeUpdated(Crime crime);
     }
 
 }

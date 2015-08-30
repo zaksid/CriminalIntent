@@ -109,8 +109,7 @@
                 android:layout_height="match_parent"
                 android:layout_marginRight="16dp"
                 android:layout_weight="1"
-                android:src="@android:drawable/ic_menu_call"
-                android:text="@string/crime_call" />
+                android:src="@android:drawable/ic_menu_call" />
 
             <Button
                 android:id="@+id/crime_sendReportButton"
