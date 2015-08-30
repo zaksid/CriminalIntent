@@ -100,9 +100,17 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="16dp"
-                android:layout_marginRight="16dp"
                 android:layout_weight="1"
                 android:text="@string/crime_suspect_text" />
+
+            <ImageButton
+                android:id="@+id/crime_callSuspectButton"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginRight="16dp"
+                android:layout_weight="1"
+                android:src="@android:drawable/ic_menu_call"
+                android:text="@string/crime_call" />
 
             <Button
                 android:id="@+id/crime_sendReportButton"
@@ -115,4 +123,5 @@
         </LinearLayout>
 
     </LinearLayout>
+
 </ScrollView>

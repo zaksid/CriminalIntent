@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.NavUtils;
@@ -29,6 +30,7 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import java.io.File;
 import java.util.Date;
@@ -245,6 +247,7 @@ public class CrimeFragment extends Fragment {
             }
         });
 
+        ImageButton callSuspectButton = (ImageButton) view.findViewById(R.id.crime_callSuspectButton);
         chooseSuspectButton = (Button) view.findViewById(R.id.crime_suspectButton);
         chooseSuspectButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -257,6 +260,22 @@ public class CrimeFragment extends Fragment {
         if (crime.getSuspect() != null) {
             chooseSuspectButton.setText(crime.getSuspect());
         }
+
+        callSuspectButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String suspectPhone = crime.getSuspectPhone();
+                if (suspectPhone == null) {
+                    Toast.makeText(getActivity().getApplicationContext(), "Suspect has no number",
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                Intent intent = new Intent(Intent.ACTION_DIAL);
+                intent.setData(Uri.parse("tel:" + suspectPhone));
+                startActivity(intent);
+            }
+        });
 
         return view;
     }
@@ -292,20 +311,56 @@ public class CrimeFragment extends Fragment {
 
         if (requestCode == REQUEST_CONTACT) {
             Uri contactUri = data.getData();
-            String[] queryFilds = new String[]{
-                    ContactsContract.Contacts.DISPLAY_NAME
-            };
             Cursor cursor = getActivity().getContentResolver()
-                    .query(contactUri, queryFilds, null, null, null);
+                    .query(contactUri, null, null, null, null);
             if (cursor.getCount() == 0) {
                 cursor.close();
                 return;
             }
 
             cursor.moveToFirst();
-            String suspect = cursor.getString(0);
-            crime.setSuspect(suspect);
-            chooseSuspectButton.setText(suspect);
+
+            String suspectName = cursor.getString(
+                    cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
+
+            String contactId = cursor.getString(
+                    cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID));
+
+            String hasPhone = cursor.getString(
+                    cursor.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER));
+
+            if (hasPhone.equalsIgnoreCase("1")) {
+
+                Cursor phones = getActivity().getContentResolver().query(
+                        Phone.CONTENT_URI, null, Phone.CONTACT_ID + "=" + contactId, null, null);
+
+                boolean mobileDefined = false;
+
+                while (phones.moveToNext()) {
+                    String number = phones.getString(phones.getColumnIndex(Phone.NUMBER));
+                    int type = phones.getInt(phones.getColumnIndex(Phone.TYPE));
+
+                    switch (type) {
+                        case Phone.TYPE_MOBILE:
+                            if (crime.getSuspectPhone() != null) {
+                                crime.setSuspectPhone(number);
+                                mobileDefined = true;
+                            }
+                            break;
+
+                        case Phone.TYPE_WORK:
+                            if (!mobileDefined)
+                                crime.setSuspectPhone(number);
+                            break;
+                    }
+                }
+                phones.close();
+            } else {
+                crime.setSuspectPhone(null);
+            }
+
+            crime.setSuspect(suspectName);
+            chooseSuspectButton.setText(suspectName);
             cursor.close();
         }
 
