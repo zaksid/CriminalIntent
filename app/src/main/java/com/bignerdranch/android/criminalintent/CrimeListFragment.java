@@ -3,6 +3,7 @@ package com.bignerdranch.android.criminalintent;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Outline;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
@@ -15,6 +16,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewOutlineProvider;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -70,19 +72,46 @@ public class CrimeListFragment extends ListFragment {
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.empty_view, parent, false);
+        View view;
 
-        addNewCrimeButton = (Button) view.findViewById(R.id.button_add_crime);
-        addNewCrimeButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Crime crime = new Crime();
-                CrimeLab.get(getActivity()).addCrime(crime);
-                Intent intent = new Intent(getActivity(), CrimePagerActivity.class);
-                intent.putExtra(CrimeFragment.EXTRA_CRIME_ID, crime.getId());
-                startActivityForResult(intent, 0);
-            }
-        });
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            view = inflater.inflate(R.layout.fragment_crime_list, parent, false);
+
+            View addButton = view.findViewById(R.id.add_button);
+            addButton.setOutlineProvider(new ViewOutlineProvider() {
+                @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+                @Override
+                public void getOutline(View view, Outline outline) {
+                    int diameter = getResources().getDimensionPixelSize(R.dimen.round_button_diameter);
+                    outline.setOval(0, 0, diameter, diameter);
+                }
+            });
+            addButton.setClipToOutline(true);
+            addButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Crime crime = new Crime();
+                    CrimeLab.get(getActivity()).addCrime(crime);
+                    Intent intent = new Intent(getActivity(), CrimePagerActivity.class);
+                    intent.putExtra(CrimeFragment.EXTRA_CRIME_ID, crime.getId());
+                    startActivityForResult(intent, 0);
+                }
+            });
+        } else {
+            view = inflater.inflate(R.layout.empty_view, parent, false);
+
+            addNewCrimeButton = (Button) view.findViewById(R.id.button_add_crime);
+            addNewCrimeButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Crime crime = new Crime();
+                    CrimeLab.get(getActivity()).addCrime(crime);
+                    Intent intent = new Intent(getActivity(), CrimePagerActivity.class);
+                    intent.putExtra(CrimeFragment.EXTRA_CRIME_ID, crime.getId());
+                    startActivityForResult(intent, 0);
+                }
+            });
+        }
 
         ListView listView = (ListView) view.findViewById(android.R.id.list);
 
